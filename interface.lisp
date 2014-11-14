@@ -21,6 +21,11 @@
   (dolist (item list)
     (apply #'gtk-list-store-set model (gtk-list-store-append model) item)))
 
+(defun fill-table-map (model list &rest accessors)
+  (gtk-list-store-clear model)
+  (dolist (item list)
+    (apply #'gtk-list-store-set model (gtk-list-store-append model)
+           (mapcar (lambda (a) (funcall a item)) accessors))))
 
 (defun table-columns-labels (table &rest args)
   (dolist (col+label (group args 2))
@@ -31,6 +36,13 @@
       (make-instance 'gtk-cell-renderer-text)
       "text" (first col+label)))))
 
+(bind-multi ((macroname vertically horizontally)
+             (direction :vertical :horizontal))
+  (defmacro! macroname (&rest widgets)
+    ;; todo support for packing and expansion options
+    `(let ((,g!box (make-instance 'gtk-box :orientation direction)))
+       ,@(mapcar #`(gtk-container-add ,g!box ,a1) widgets)
+       ,g!box)))
 
 (defun simple-account-main ()
   (sb-int:with-float-traps-masked (:divide-by-zero)
@@ -39,9 +51,7 @@
                                     :type :toplevel
                                     :title "Simple Accounting"
                                     :default-width 800
-                                    :default-height 600))
-             (container (make-instance 'gtk-box :orientation :vertical))
-             (entry-container (make-instance 'gtk-box :orientation :horizontal))
+                                    :default-height 600)) 
              (abbrev-entry (make-instance 'gtk-entry :max-length 5))
              (account-name-entry (make-instance 'gtk-entry :max-length 100))
              (accounts-model (make-instance 'gtk-list-store :column-types '("guint" "gchararray" "gchararray")))
@@ -50,11 +60,11 @@
                                                 (leave-gtk-main)))
         (table-columns-labels accounts-table 1 "Abbrev" 2 "Account name")
         (labels ((load-accounts-table ()
-                   (fill-table accounts-model
-                               (mapcar (lambda (account) (list (slot-value account 'sad:account-id)
-                                                          (slot-value account 'sad:abbrev)
-                                                          (slot-value account 'sad:account-name)))
-                                       (sad:all-accounts))))
+                   (fill-table-map accounts-model
+                                   (sad:all-accounts)
+                                   #'sad:account-id
+                                   #'sad:abbrev
+                                   #'sad:account-name))
                  (add (&rest args)
                    (declare (ignore args))
                    (with-entries (abbrev-entry account-name-entry)
@@ -93,16 +103,15 @@
                      (clsql-sys:delete-instance-records it)
                      (load-accounts-table))))
           (load-accounts-table)
-          (gtk-container-add container
-                             (buttons-with-actions "add" #'add
-                                                   "read" #'read%
-                                                   "update" #'update
-                                                   "delete" #'delete%)))
-        (dolist (entry (list abbrev-entry account-name-entry))
-          (gtk-container-add entry-container entry))
-        (gtk-container-add container entry-container)
-        (gtk-container-add container accounts-table)
-        (gtk-container-add window container)
+          (gtk-container-add
+           window
+           (vertically
+            (buttons-with-actions "add" #'add
+                                  "read" #'read%
+                                  "update" #'update
+                                  "delete" #'delete%)
+            (horizontally abbrev-entry account-name-entry)
+            accounts-table))) 
         (gtk-widget-show-all window)))))
 
 ;; (simple-account-main)
