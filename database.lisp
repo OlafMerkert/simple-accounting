@@ -15,6 +15,8 @@
                                    :foreign-key payment-account-id
                                    :set t))))
 
+(create-standard-print-object account (account-id abbrev) account-name)
+
 (def-view-class payment ()
   ((payment-id :type integer :initform (sequence-next 'payment-id)
                :db-kind :key :db-constraints :not-null)
@@ -25,8 +27,11 @@
                                           :home-key payment-account-id
                                           :foreign-key account-id
                                           :set nil))
-))
+   (amount :type float :initarg :amount :nulls-ok nil)))
 
+(create-standard-print-object payment (payment-id) payment-date amount payment-account)
+
+;;; some general purpose setup utilities for databases
 (defun ensure-sequences (sequences)
   "Make sure the sequence identified by the given list of symbols
 actually exist in the database. Return the symbols for which we
@@ -62,7 +67,7 @@ mentioned in `cdr' has the appropriate (single) column index."
                     (create-index index-id :on table :attributes (list index))
                     (push index-id created))))))
           tables-and-indices)
-    created))
+    (nreverse created)))
 
 (defmacro define-sqlite3-database (name path &key sequences tables)
   (let ((db-name (symb '* name '-db*)))
@@ -86,3 +91,6 @@ mentioned in `cdr' has the appropriate (single) column index."
             (payment payment-date payment-account-id)))
 
 (connect-simple-accounting)
+;; (setup-simple-accounting)
+
+(defun all-accounts () (select 'account :order-by 'account-name :flatp t))
