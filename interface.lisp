@@ -27,6 +27,16 @@
            ;; (format t "~A~%" ,g!item)
            (gtk-list-store-set ,g!model (gtk-list-store-append ,g!model) ,@syms))))))
 
+(defun table-columns-labels (table &rest args)
+  (dolist (col+label (group args 2))
+    (gtk-tree-view-append-column
+     table
+     (gtk-tree-view-column-new-with-attributes
+      (second col+label)
+      (make-instance 'gtk-cell-renderer-text)
+      "text" (first col+label)))))
+
+
 (defun simple-account-main ()
   (sb-int:with-float-traps-masked (:divide-by-zero)
     (within-main-loop
@@ -39,38 +49,61 @@
              (entry-container (make-instance 'gtk-box :orientation :horizontal))
              (abbrev-entry (make-instance 'gtk-entry :max-length 5))
              (account-name-entry (make-instance 'gtk-entry :max-length 100))
-             (accounts-model (make-instance 'gtk-list-store :column-types '("gchararray" "gchararray")))
+             (accounts-model (make-instance 'gtk-list-store :column-types '("guint" "gchararray" "gchararray")))
              (accounts-table (make-instance 'gtk-tree-view :model accounts-model)))
         (g-signal-connect window "destroy" (ilambda+ (format t "Leaving ..~%")
                                                 (leave-gtk-main)))
-        (gtk-tree-view-append-column accounts-table
-                                     (gtk-tree-view-column-new-with-attributes "Abbrev"
-                                                                               (make-instance 'gtk-cell-renderer-text)
-                                                                               "text" 0))
-        (gtk-tree-view-append-column accounts-table
-                                     (gtk-tree-view-column-new-with-attributes "Account name"
-                                                                               (make-instance 'gtk-cell-renderer-text)
-                                                                               "text" 0)) 
+        (table-columns-labels accounts-table 1 "Abbrev" 2 "Account name")
         (labels ((load-accounts-table ()
                    (fill-table accounts-model
-                               (mapcar (lambda (account) (slot-value account 'sad:account-name))
+                               (mapcar (lambda (account) (list (slot-value account 'sad:account-id)
+                                                          (slot-value account 'sad:abbrev)
+                                                          (slot-value account 'sad:account-name)))
                                        (sad:all-accounts))
-                               2))
-                 (add (&rest args) (declare (ignore args))
-                      (with-entries (abbrev-entry account-name-entry)
-                        (when (length>0 account-name-entry)
-                          (clsql-sys:update-records-from-instance
-                           (make-instance 'sad:account :abbrev abbrev-entry
-                                          :account-name account-name-entry))
-                          (setf abbrev-entry ""
-                                account-name-entry "")
-                          (load-accounts-table)))))
+                               3))
+                 (add (&rest args)
+                   (declare (ignore args))
+                   (with-entries (abbrev-entry account-name-entry)
+                     (when (length>0 account-name-entry)
+                       (clsql-sys:update-records-from-instance
+                        (make-instance 'sad:account :abbrev abbrev-entry
+                                       :account-name account-name-entry))
+                       (setf abbrev-entry ""
+                             account-name-entry "")
+                       (load-accounts-table))))
+                 (selected-account-id ()
+                   (awhen (gtk-tree-selection-get-selected (gtk-tree-view-get-selection accounts-table))
+                     (first (gtk-tree-model-get accounts-model it 0))))
+                 (selected-account ()
+                   (sad:account-by-id (selected-account-id)))
+                 (read% (&rest args)
+                   (declare (ignore args))
+                   (awhen  (selected-account)
+                     (with-entries (abbrev-entry account-name-entry)
+                       (setf abbrev-entry (slot-value it 'sad:abbrev)
+                             account-name-entry (slot-value it 'sad:account-name)))))
+                 (update (&rest args)
+                   (declare (ignore args))
+                   (awhen (selected-account)
+                     (with-entries (abbrev-entry account-name-entry)
+                       (when (length>0 account-name-entry)
+                         (setf (slot-value it 'sad:abbrev) abbrev-entry
+                               (slot-value it 'sad:account-name) account-name-entry
+                               abbrev-entry ""
+                               account-name-entry "")
+                         (clsql-sys:update-records-from-instance it)
+                         (load-accounts-table)))))
+                 (delete% (&rest args)
+                   (declare (ignore args))
+                   (awhen (selected-account)
+                     (clsql-sys:delete-instance-records it)
+                     (load-accounts-table))))
           (load-accounts-table)
           (gtk-container-add container
                              (buttons-with-actions "add" #'add
-                                                   "read" nil
-                                                   "update" nil
-                                                   "delete" nil)))
+                                                   "read" #'read%
+                                                   "update" #'update
+                                                   "delete" #'delete%)))
         (dolist (entry (list abbrev-entry account-name-entry))
           (gtk-container-add entry-container entry))
         (gtk-container-add container entry-container)

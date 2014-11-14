@@ -1,6 +1,6 @@
 (in-package :simple-accounting-data)
 
-(locally-enable-sql-reader-syntax)
+(file-enable-sql-reader-syntax)
 
 ;;; for starters, we just need two simple classes: accounts and
 ;;; payments
@@ -90,7 +90,10 @@ mentioned in `cdr' has the appropriate (single) column index."
   :tables '((account account-name)
             (payment payment-date payment-account-id)))
 
-(connect-simple-accounting)
+;; (connect-simple-accounting)
 ;; (setup-simple-accounting)
 
 (defun all-accounts () (select 'account :order-by 'account-name :flatp t))
+
+(defun account-by-id (id)
+  (when id (first (select 'account :where [= [account-id] id] :flatp t :limit 1))))

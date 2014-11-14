@@ -16,7 +16,8 @@
    #:payment-account-id
    #:payment-account
    #:amount
-   #:all-accounts))
+   #:all-accounts
+   #:account-by-id))
 
 (defpackage :simple-accounting-interface
   (:nicknames :sai)
