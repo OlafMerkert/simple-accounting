@@ -3,4 +3,5 @@
                clsql
                clsql-sqlite3)
   :serial t
-  :components ((:file "packages")))
+  :components ((:file "packages")
+               (:file "database")))
