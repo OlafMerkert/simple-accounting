@@ -5,11 +5,21 @@
 ;;; for starters, we just need two simple classes: accounts and
 ;;; payments
 (def-view-class account ()
-  ((account-id :type integer :initform (sequence-next 'account-id)
-               :db-kind :key :db-constraints :not-null)
-   (abbrev :type (string 5) :initarg :abbrev :nulls-ok t)
-   (account-name :type string :initarg :account-name :nulls-ok nil)
-   (payments :db-kind :join
+  ((account-id :accessor account-id
+               :type integer
+               :initform (sequence-next 'account-id)
+               :db-kind :key
+               :db-constraints :not-null)
+   (abbrev :accessor abbrev
+           :type (string 5)
+           :initarg :abbrev
+           :nulls-ok t)
+   (account-name :accessor account-name
+                 :type string
+                 :initarg :account-name
+                 :nulls-ok nil)
+   (payments :reader payments
+             :db-kind :join
              :db-info (:join-class payment
                                    :home-key account-id
                                    :foreign-key payment-account-id
@@ -18,16 +28,28 @@
 (create-standard-print-object account (account-id abbrev) account-name)
 
 (def-view-class payment ()
-  ((payment-id :type integer :initform (sequence-next 'payment-id)
+  ((payment-id :accessor payment-id
+               :type integer
+               :initform (sequence-next 'payment-id)
                :db-kind :key :db-constraints :not-null)
-   (payment-date :type date :initarg :payment-date :nulls-ok nil)
-   (payment-account-id :type integer :initarg :payment-account-id :nulls-ok nil)
-   (payment-account :db-kind :join
+   (payment-date :accessor payment-date
+                 :type date
+                 :initarg :payment-date
+                 :nulls-ok nil)
+   (payment-account-id :accessor payment-account-id
+                       :type integer
+                       :initarg :payment-account-id
+                       :nulls-ok nil)
+   (payment-account :accessor payment-account
+                    :db-kind :join
                     :db-info (:join-class account
                                           :home-key payment-account-id
                                           :foreign-key account-id
                                           :set nil))
-   (amount :type float :initarg :amount :nulls-ok nil)))
+   (amount :accessor amount
+           :type float
+           :initarg :amount
+           :nulls-ok nil)))
 
 (create-standard-print-object payment (payment-id) payment-date amount payment-account)
 
