@@ -20,7 +20,7 @@
 
 (defpackage :simple-accounting-interface
   (:nicknames :sai)
-  (:use :cl :ol
+  (:use :cl :ol :iterate
         :gtk :gdk :gdk-pixbuf :gobject :glib :gio :pango :cairo)
   (:export))
 

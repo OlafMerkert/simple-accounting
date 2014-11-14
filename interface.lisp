@@ -16,13 +16,16 @@
        (symbol-macrolet ,(mapcar #2`(,a1 (gtk-entry-text ,a2)) entries syms)
          ,@body))))
 
-(defun fill-table (model list)
-  ;; first remove everything
-  (gtk-list-store-clear model)
-  ;; then add one after the other
-  (dolist (item list)
-    (apply #'gtk-list-store-set model (gtk-list-store-append model)
-           (mklist item))))
+(defmacro! fill-table (o!model list &optional (columns 1))
+  (let ((syms (iter (for i from 1 to columns) (collect (gensym)))))
+    `(progn
+       ;; first remove everything
+       (gtk-list-store-clear ,g!model)
+       ;; then add one after the other
+       (dolist (,g!item ,list)
+         (dbind ,syms ,g!item
+           ;; (format t "~A~%" ,g!item)
+           (gtk-list-store-set ,g!model (gtk-list-store-append ,g!model) ,@syms))))))
 
 (defun simple-account-main ()
   (sb-int:with-float-traps-masked (:divide-by-zero)
@@ -50,9 +53,9 @@
                                                                                "text" 0)) 
         (labels ((load-accounts-table ()
                    (fill-table accounts-model
-                               (mapcar (lambda (account) (list (slot-value account 'sad:abbrev)
-                                                          (slot-value account 'sad:account-name)))
-                                       (sad:all-accounts))))
+                               (mapcar (lambda (account) (slot-value account 'sad:account-name))
+                                       (sad:all-accounts))
+                               2))
                  (add (&rest args) (declare (ignore args))
                       (with-entries (abbrev-entry account-name-entry)
                         (when (length>0 account-name-entry)
