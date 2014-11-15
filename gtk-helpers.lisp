@@ -40,6 +40,8 @@ property."
                      :accessor column-accessors))
   (:documentation "TODO"))
 
+(create-standard-print-object table view "on" model "with" column-accessors (store-class))
+
 (defun init-table% (column-types column-accessors column-labels)
   (let ((table (make-instance 'table
                               :store-class 'gtk-list-store
@@ -54,7 +56,8 @@ property."
        (gtk-tree-view-column-new-with-attributes
         (cdr column-label)
         (make-instance 'gtk-cell-renderer-text)
-        "text" (car column-label))))))
+        "text" (car column-label))))
+    table))
 
 (defmacro make-table (&rest columns)
   "Every column should have the shape (accessor type &optional label).
