@@ -14,55 +14,56 @@
 (defun accounts-manager ()
   (let ((abbrev-entry (make-instance 'gtk-entry :max-length 5))
         (account-name-entry (make-instance 'gtk-entry :max-length 100))
-        (accounts-table (make-table (sad:account-id "guint")
-                                    (sad:abbrev "gchararray" "Abbrev")
-                                    (sad:account-name "gchararray" "Account Name"))))
-            (labels ((load-accounts-table ()
-                   (fill-table accounts-table (sad:all-accounts)))
-                 (selected-account ()
-                   (sad:account-by-id (table-selected-cell accounts-table 0)))
-                 (add (&rest args)
-                   (declare (ignore args))
-                   (with-entries (abbrev-entry account-name-entry)
-                     (when (length>0 account-name-entry)
-                       (clsql-sys:update-records-from-instance
-                        (make-instance 'sad:account :abbrev abbrev-entry
-                                       :account-name account-name-entry))
-                       (setf abbrev-entry ""
-                             account-name-entry "")
-                       (load-accounts-table))))
-                 (read% (&rest args)
-                   (declare (ignore args))
-                   (awhen  (selected-account)
-                     (with-entries (abbrev-entry account-name-entry)
-                       (setf abbrev-entry (slot-value it 'sad:abbrev)
-                             account-name-entry (slot-value it 'sad:account-name)))))
-                 (update (&rest args)
-                   (declare (ignore args))
-                   (awhen (selected-account)
-                     (with-entries (abbrev-entry account-name-entry)
-                       (when (length>0 account-name-entry)
-                         (setf3 (slot-value it 'sad:abbrev) abbrev-entry ""
-                                (slot-value it 'sad:account-name) account-name-entry "")
-                         (clsql-sys:update-records-from-instance it)
-                         (load-accounts-table)))))
-                 (delete% (&rest args)
-                   (declare (ignore args))
-                   (awhen (selected-account)
-                     (clsql-sys:delete-instance-records it)
-                     (load-accounts-table))))
-          (load-accounts-table)
-          (vertically
-           (buttons-with-actions "add"    #'add
-                                 "read"   #'read%
-                                 "update" #'update
-                                 "delete" #'delete%)
-           (horizontally abbrev-entry account-name-entry)
-           (view accounts-table)))))
+        (accounts-table (make-list-view (sad:account-id "guint")
+                                        (sad:abbrev "gchararray" "Abbrev")
+                                        (sad:account-name "gchararray" "Account Name"))))
+    (labels ((load-accounts-table ()
+               (fill-model accounts-table (sad:all-accounts)))
+             (selected-account ()
+               (sad:account-by-id (selected-cell accounts-table 0)))
+             (add (&rest args)
+               (declare (ignore args))
+               (with-entries (abbrev-entry account-name-entry)
+                 (when (length>0 account-name-entry)
+                   (clsql-sys:update-records-from-instance
+                    (make-instance 'sad:account :abbrev abbrev-entry
+                                   :account-name account-name-entry))
+                   (setf abbrev-entry ""
+                         account-name-entry "")
+                   (load-accounts-table))))
+             (read% (&rest args)
+               (declare (ignore args))
+               (awhen  (selected-account)
+                 (with-entries (abbrev-entry account-name-entry)
+                   (setf abbrev-entry (slot-value it 'sad:abbrev)
+                         account-name-entry (slot-value it 'sad:account-name)))))
+             (update (&rest args)
+               (declare (ignore args))
+               (awhen (selected-account)
+                 (with-entries (abbrev-entry account-name-entry)
+                   (when (length>0 account-name-entry)
+                     (setf3 (slot-value it 'sad:abbrev) abbrev-entry ""
+                            (slot-value it 'sad:account-name) account-name-entry "")
+                     (clsql-sys:update-records-from-instance it)
+                     (load-accounts-table)))))
+             (delete% (&rest args)
+               (declare (ignore args))
+               (awhen (selected-account)
+                 (clsql-sys:delete-instance-records it)
+                 (load-accounts-table))))
+      (load-accounts-table)
+      (vertically
+       (buttons-with-actions "add"    #'add
+                             "read"   #'read%
+                             "update" #'update
+                             "delete" #'delete%)
+       (horizontally abbrev-entry account-name-entry)
+       (view accounts-table)))))
 
 (defun payments-recorder ()
   (let ((date-entry (make-instance 'gtk-calendar))
-        account-entry
+        (account-entry (make-combo-box (sad:account-id "guint")
+                                       (sad:account-name "gchararray" t)))
         (amount-entry (make-instance 'gtk-spin-button
                                      :adjustment (make-instance 'gtk-adjustment :value 0
                                                                 :lower 0
@@ -72,19 +73,23 @@
                                      :digits 2
                                      :numeric t
                                      :xalign 1))
-        (payments-table (make-table (sad:payment-id "guint")
-                                    ((lambda (p) (princ (sad:payment-date p))) "gchararray" "Date")
-                                    ((lambda (p) (sad:account-name (sad:account p))) "gchararray" "Account")
-                                    (sad:amount "gfloat" "Amount"))))
-    (labels ((load-payments-table ()
-               (fill-table payments-table (sad:all-payments))))
+        (payments-table (make-list-view (sad:payment-id "guint")
+                                        ((lambda (p) (princ (sad:payment-date p))) "gchararray" "Date")
+                                        ((lambda (p) (sad:account-name (sad:payment-account p))) "gchararray" "Account")
+                                        (sad:amount "gfloat" "Amount"))))
+    (labels ((load-account-entry ()
+               (fill-model account-entry (sad:all-accounts)))
+             (load-payments-table ()
+               (fill-model payments-table (sad:all-payments))))
+      (load-account-entry)
       (load-payments-table))
     (vertically
      (buttons-with-actions "add" nil
                            "read" nil
                            "update" nil
                            "delete" nil)
-     (horizontally date-entry ;account-entry
+     (horizontally date-entry
+                   (box account-entry)
                    amount-entry)
      (view payments-table))))
 
