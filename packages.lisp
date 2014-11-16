@@ -17,13 +17,17 @@
    #:payment-account
    #:amount
    #:all-accounts
-   #:account-by-id))
+   #:account-by-id
+   #:all-payments
+   #:*simple-accounting-db*
+   #:payment-by-id))
 
 (defpackage :simple-accounting-interface
   (:nicknames :sai)
   (:use :cl :ol :iterate
         :gtk :gdk :gdk-pixbuf :gobject :glib :gio :pango :cairo)
-  (:export))
+  (:export
+   #:simple-account))
 
 #|(eval-when (:load-toplevel :execute)
   (sb-int:set-floating-point-modes :traps nil))|#

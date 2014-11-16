@@ -45,7 +45,8 @@
                     :db-info (:join-class account
                                           :home-key payment-account-id
                                           :foreign-key account-id
-                                          :set nil))
+                                          :set nil
+                                          :retrieval :immediate))
    (amount :accessor amount
            :type float
            :initarg :amount
@@ -119,3 +120,8 @@ mentioned in `cdr' has the appropriate (single) column index."
 
 (defun account-by-id (id)
   (when id (first (select 'account :where [= [account-id] id] :flatp t :limit 1))))
+
+(defun all-payments () (select 'payment :order-by 'payment-date :flatp t))
+
+(defun payment-by-id (id)
+  (when id (first (select 'payment :where [= [payment-id] id] :flatp t :limit 1))))
