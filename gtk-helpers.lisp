@@ -29,51 +29,56 @@ property."
          ,@body))))
 
 ;;; viewing table with `gtk-tree-view'
-(defclass table ()
-  ((store-class :initarg :store-class
-                :reader store-class)
+(defclass tree-model-helper ()
+  ((store-class :reader store-class)
    (model :initarg :model
           :accessor model)
-   (view :accessor view)
    (column-accessors :initarg :column-accessors
                      :initform nil
                      :accessor column-accessors))
   (:documentation "TODO"))
 
-(create-standard-print-object table view "on" model "with" column-accessors (store-class))
+(create-standard-print-object tree-model-helper store-class "for" column-accessors)
 
-(defun init-table% (column-types column-accessors column-labels)
-  (let ((table (make-instance 'table
-                              :store-class 'gtk-list-store
-                              :model (make-instance 'gtk-list-store
-                                                    :column-types column-types)
-                              :column-accessors column-accessors)))
-    (setf (view table)
-          (make-instance 'gtk-tree-view :model (model table)))
+(defmethod initialize-instance :after ((x tree-model-helper) &key column-types)
+  (with-slots (store-class model) x
+    (setf store-class 'gtk-list-store
+          model (make-instance 'gtk-list-store
+                               :column-types column-types))))
+
+(defclass table (tree-model-helper)
+  ((view :accessor view))
+  (:documentation "TODO"))
+
+(defmethod initialize-instance :after ((x table) &key column-labels)
+  (with-slots (model view) x
+    (setf view 
+          (make-instance 'gtk-tree-view :model model))
     (dolist (column-label column-labels)
       (gtk-tree-view-append-column
-       (view table)
+       view
        (gtk-tree-view-column-new-with-attributes
         (cdr column-label)
         (make-instance 'gtk-cell-renderer-text)
-        "text" (car column-label))))
-    table))
+        "text" (car column-label))))))
 
 (defmacro make-table (&rest columns)
   "Every column should have the shape (accessor type &optional label).
   Only columns where `label' is present are displayed."
-  `(init-table% (list ,@(mapcar #'second columns))
-                (list ,@(mapcan #`(#',(first a1)) columns))
-                (list ,@(filter* (lambda (n col) (awhen (third col) `(cons ,n ,it)))
-                                 (lrange columns) columns))))
+  `(make-instance 'table
+                  :column-accessors (list ,@(mapcan #`(#',(first a1)) columns))
+                  :column-types (list ,@(mapcar #'second columns))
+                  :column-labels (list ,@(filter* (lambda (n col) (awhen (third col) `(cons ,n ,it)))
+                                                  (lrange columns) columns))))
 
-(defun fill-table (table list)
-  (with-slots (model column-accessors) table
+(defmethod fill-table ((x tree-model-helper) (list list))
+  (with-slots (model column-accessors) x
     (gtk-list-store-clear model)
     (dolist (item list)
       (apply #'gtk-list-store-set model (gtk-list-store-append model)
              (mapcar (lambda (a) (funcall a item)) column-accessors)))))
 
-(defun table-selected-cell (table &optional (column 0))
-  (awhen (gtk-tree-selection-get-selected (gtk-tree-view-get-selection (view table)))
-    (first (gtk-tree-model-get (model table) it column))))
+(defmethod selected-cell ((table table) &optional (column 0))
+  (with-slots (model view) table
+    (awhen (gtk-tree-selection-get-selected (gtk-tree-view-get-selection view))
+      (first (gtk-tree-model-get model it column)))))
