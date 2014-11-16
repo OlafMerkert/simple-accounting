@@ -90,8 +90,6 @@ property."
 (defmethod initialize-instance :after ((combo-box combo-box) &key visible-columns)
   (with-slots (model box) combo-box
     (setf box (make-instance 'gtk-combo-box :model model))
-    ;; by default select the first choice
-    (setf (gtk-combo-box-active box) 0)
     (dolist (col visible-columns)
       (let ((renderer (make-instance 'gtk-cell-renderer-text)))
         (gtk-cell-layout-pack-start box renderer)

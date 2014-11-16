@@ -74,24 +74,50 @@
                                      :numeric t
                                      :xalign 1))
         (payments-table (make-list-view (sad:payment-id "guint")
-                                        ((lambda (p) (princ (sad:payment-date p))) "gchararray" "Date")
+                                        ((lambda (p) (mvbind (day month year) (clsql-sys:decode-date (sad:payment-date p))
+                                                  (format nil "~4,'0D-~2,'0D-~2,'0D"
+                                                          year month day)))
+                                         "gchararray" "Date")
                                         ((lambda (p) (sad:account-name (sad:payment-account p))) "gchararray" "Account")
                                         (sad:amount "gfloat" "Amount"))))
     (labels ((load-account-entry ()
                (fill-model account-entry (sad:all-accounts)))
              (load-payments-table ()
-               (fill-model payments-table (sad:all-payments))))
+               (fill-model payments-table (sad:all-payments)))
+             (selected-account-id ()
+               (selected-cell account-entry))
+             (selected-account ()
+               (sad:account-by-id (selected-cell account-entry)))
+             (add (&rest args)
+               (declare (ignore args))
+               (let ((pmt (make-instance 'sad:payment :payment-account-id (princ (selected-account-id) t)
+                                         :payment-date (princ (clsql-sys:make-date
+                                                         :year (gtk-calendar-year date-entry)
+                                                         :month (gtk-calendar-month date-entry)
+                                                         :day (gtk-calendar-day date-entry))
+                                                              t)
+                                         :amount (princ (gtk-spin-button-value amount-entry) t))))
+                 (format t "~A~%" pmt)
+                 (clsql-sys:update-records-from-instance
+                  pmt))
+               (load-payments-table))
+             (read% (&rest args)
+               (declare (ignore args)))
+             (update (&rest args)
+               (declare (ignore args)))
+             (delete% (&rest args)
+               (declare (ignore args))))
       (load-account-entry)
-      (load-payments-table))
-    (vertically
-     (buttons-with-actions "add" nil
-                           "read" nil
-                           "update" nil
-                           "delete" nil)
-     (horizontally date-entry
-                   (box account-entry)
-                   amount-entry)
-     (view payments-table))))
+      (load-payments-table)
+      (vertically
+       (buttons-with-actions "add" #'add
+                             "read" nil
+                             "update" nil
+                             "delete" nil)
+       (horizontally date-entry
+                     (box account-entry)
+                     amount-entry)
+       (view payments-table)))))
 
 
 (defun simple-account-main ()
