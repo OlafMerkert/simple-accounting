@@ -7,3 +7,14 @@
    [[file:~/Projekte/simple-accounting/gtk-helpers.lisp::(defmethod%20fill-model%20((x%20tree-model-helper)%20(list%20list))][file:~/Projekte/simple-accounting/gtk-helpers.lisp::(defmethod fill-model ((x tree-model-helper) (list list))]]
 ** DONE support for :expand and :fill in box helper macros
    [[file:~/Projekte/simple-accounting/gtk-helpers.lisp::(bind-multi%20((macroname%20vertically%20horizontally)][file:~/Projekte/simple-accounting/gtk-helpers.lisp::(bind-multi ((macroname vertically horizontally)]]
+** TODO Filtering displayed payments [0/3]
+   [[file:~/Projekte/simple-accounting/interface.lisp::(defun%20payments-recorder%20()][file:~/Projekte/simple-accounting/interface.lisp::(defun payments-recorder ()]]
++ [ ] by year
++ [ ] by month
++ [ ] by custom interval
+** TODO Statistics and summing of payments [0/4]
+   [[file:~/Projekte/simple-accounting/interface.lisp::(defun%20simple-account-main%20()][file:~/Projekte/simple-accounting/interface.lisp::(defun simple-account-main ()]]
++ [ ] payments per month
++ [ ] per year
++ [ ] per account
++ [ ] bar chart for all accounts (comparison of expenses)
