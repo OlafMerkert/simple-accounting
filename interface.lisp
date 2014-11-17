@@ -52,14 +52,16 @@
                  (clsql-sys:delete-instance-records it)
                  (load-accounts-table))))
       (load-accounts-table)
-      (vertically
-       (buttons-with-actions "add"    #'add
-                             "read"   #'read%
-                             "update" #'update
-                             "delete" #'delete%)
-       (horizontally abbrev-entry account-name-entry)
-       :expand
-       (view accounts-table)))))
+      (values (vertically
+               (buttons-with-actions "add"    #'add
+                                     "read"   #'read%
+                                     "update" #'update
+                                     "delete" #'delete%)
+               (horizontally abbrev-entry account-name-entry)
+               :expand
+               (view accounts-table))
+              ;; also return function for updating models
+              (ilambda+ (load-accounts-table))))))
 
 (defun calendar->sql-date (calendar)
   (clsql-sys:make-date
@@ -103,7 +105,7 @@
              (selected-account-id ()
                (selected-cell account-entry))
              #|(selected-account ()
-               (sad:account-by-id (selected-cell account-entry)))|#
+             (sad:account-by-id (selected-cell account-entry)))|#
              (selected-payment ()
                (sad:payment-by-id (selected-cell payments-table)))
              (add (&rest args)
@@ -136,28 +138,32 @@
                  (load-payments-table))))
       (load-account-entry)
       (load-payments-table)
-      (vertically
-       (buttons-with-actions "add" #'add
-                             "read" #'read%
-                             "update" #'update
-                             "delete" #'delete%)
-       (horizontally date-entry
-                     (aprog1 (make-instance 'gtk-alignment :yscale 0 :yalign 0.5)
-                       (gtk-container-add it (box account-entry)))
-                     amount-entry)
-       :expand
-       (view payments-table)))))
+      (values (vertically
+               (buttons-with-actions "add" #'add
+                                     "read" #'read%
+                                     "update" #'update
+                                     "delete" #'delete%)
+               (horizontally (aprog1 (make-instance 'gtk-alignment :yscale 0 :yalign 0.5)
+                               (gtk-container-add it (box account-entry)))
+                             amount-entry
+                             date-entry)
+               :expand
+               (view payments-table))
+              ;; second return value: a function to be called for
+              ;; updating the models
+              (ilambda+ (load-account-entry) (load-payments-table))))))
 
 (defun simple-account-main ()
   (sb-int:with-float-traps-masked (:divide-by-zero)
     (within-main-loop
       (let ((window (make-instance 'gtk-window
                                    :title "Simple Accounting" :type :toplevel
-                                   :default-width 800 :default-height 600)))
+                                   :default-width 700 :default-height 900)))
         (g-signal-connect window "destroy" (ilambda+ (format t "Leaving ..~%")
                                                 (leave-gtk-main)))
-        ;; (gtk-container-add window (accounts-manager))
-        (gtk-container-add window (payments-recorder))
+        (gtk-container-add window
+                           (notebook ("Accounts" accounts-manager)
+                                     ("Payments" payments-recorder)))
         (gtk-widget-show-all window)))))
 
 (defun simple-account ()

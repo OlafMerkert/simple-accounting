@@ -163,3 +163,20 @@ property."
     (call-next-method)
     (unless (setf (selected-cell combo-box) selection)
       (gtk-combo-box-set-active (box combo-box) 0))))
+
+;;; multipage apps with notebooks
+(defmacro! notebook (&rest components)
+  "Every component should have the shape (label . call) where `call'
+ought to be a valid function invocation returning 2 values, a widget
+and a function which will be called every time we switch to the
+widget. "
+  `(let ((,g!notebook (make-instance 'gtk-notebook :enable-popup t))
+         (,g!updaters (make-array ,(length components))))
+     ,@(mapcar #2`(mvbind (,g!component ,g!updater) ,(rest  a1)
+                    (gtk-notebook-add-page ,g!notebook ,g!component
+                                           (make-instance 'gtk-label :label ,(first a1)))
+                    (setf (aref ,g!updaters ,a2) ,g!updater))
+               components (lrange components))
+     (g-signal-connect ,g!notebook "switch-page" (ilambda (,g!notebook ,g!page ,g!page-nr &rest ,g!data)
+                                                   (funcall (aref ,g!updaters ,g!page-nr))))
+     ,g!notebook))
