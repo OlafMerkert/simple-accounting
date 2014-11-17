@@ -58,6 +58,7 @@
                              "update" #'update
                              "delete" #'delete%)
        (horizontally abbrev-entry account-name-entry)
+       :expand
        (view accounts-table)))))
 
 (defun calendar->sql-date (calendar)
@@ -143,6 +144,7 @@
        (horizontally date-entry
                      (box account-entry)
                      amount-entry)
+       :expand
        (view payments-table)))))
 
 (defun simple-account-main ()

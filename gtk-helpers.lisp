@@ -1,12 +1,30 @@
 (in-package :simple-accounting-interface)
 
 ;;; packing helper macros
+(defpar *padding-horizontal* 3)
+(defpar *padding-vertical* 2)
+
+(defun push-if (pred list)
+  "Given a list like (:a :b c d :e f) produce the list of
+  lists ((c :b :a) (d) (f :e)) if `pred' is `keywordp'."
+  (labels ((rec (list acc matches)
+             (if (null list)
+                 (if matches (cons matches acc) acc)
+                 (if (funcall pred (car list))
+                     (rec (cdr list) acc (cons (car list) matches))
+                     (rec (cdr list) (cons (cons (car list) matches) acc) nil)))))
+    (nreverse (rec list nil nil))))
+
 (bind-multi ((macroname vertically horizontally)
-             (direction :vertical :horizontal))
+             (direction :vertical :horizontal)
+             (padding *padding-vertical* *padding-horizontal*))
   (defmacro! macroname (&rest widgets)
-    ;; todo support for packing and expansion options
-    `(let ((,g!box (make-instance 'gtk-box :orientation direction)))
-       ,@(mapcar #`(gtk-container-add ,g!box ,a1) widgets)
+    `(let ((,g!box (make-instance 'gtk-box :orientation direction))
+           (,g!padding padding))
+       ,@(mapcar #`(gtk-box-pack-start ,g!box ,(car a1) :padding ,g!padding
+                                       ,@(mapcan #`(,a1 t) (rest a1))
+                                       :expand nil)
+                 (push-if #'keywordp widgets))
        ,g!box)))
 
 (defun buttons-with-actions (&rest labels+actions)
@@ -17,7 +35,7 @@
     (dolist (label+action (group labels+actions 2))
       (let ((button (make-instance 'gtk-button :label (first label+action))))
         (awhen (second label+action) (g-signal-connect button "clicked" it))
-        (gtk-container-add button-box button)))
+        (gtk-box-pack-start button-box button :expand nil :padding *padding-horizontal*)))
     button-box))
 
 (defmacro with-entries (entries &body body)

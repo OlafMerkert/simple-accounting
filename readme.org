@@ -5,3 +5,5 @@
    [[file:gtk-helpers.lisp::(defmethod%20fill-model%20:around%20((combo-box%20combo-box)%20(list%20list))][file:gtk-helpers.lisp::(defmethod fill-model :around ((combo-box combo-box) (list list))]]
 ** DONE restore selection after refill :list-view:
    [[file:~/Projekte/simple-accounting/gtk-helpers.lisp::(defmethod%20fill-model%20((x%20tree-model-helper)%20(list%20list))][file:~/Projekte/simple-accounting/gtk-helpers.lisp::(defmethod fill-model ((x tree-model-helper) (list list))]]
+** DONE support for :expand and :fill in box helper macros
+   [[file:~/Projekte/simple-accounting/gtk-helpers.lisp::(bind-multi%20((macroname%20vertically%20horizontally)][file:~/Projekte/simple-accounting/gtk-helpers.lisp::(bind-multi ((macroname vertically horizontally)]]
