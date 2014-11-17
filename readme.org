@@ -1,0 +1,7 @@
+* Tasks
+** DONE setting selected entry :combo-box:
+   [[file:~/Projekte/simple-accounting/gtk-helpers.lisp::(first%20(gtk-tree-model-get%20model%20it%20column)))))][file:~/Projekte/simple-accounting/gtk-helpers.lisp::(first (gtk-tree-model-get model it column)))))]]
+** DONE restore selection after refill :combo-box:
+   [[file:gtk-helpers.lisp::(defmethod%20fill-model%20:around%20((combo-box%20combo-box)%20(list%20list))][file:gtk-helpers.lisp::(defmethod fill-model :around ((combo-box combo-box) (list list))]]
+** DONE restore selection after refill :list-view:
+   [[file:~/Projekte/simple-accounting/gtk-helpers.lisp::(defmethod%20fill-model%20((x%20tree-model-helper)%20(list%20list))][file:~/Projekte/simple-accounting/gtk-helpers.lisp::(defmethod fill-model ((x tree-model-helper) (list list))]]

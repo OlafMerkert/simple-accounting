@@ -46,6 +46,26 @@ property."
           model (make-instance 'gtk-list-store
                                :column-types column-types))))
 
+(defmethod find-cell-by-value ((x tree-model-helper) value &optional (column 0))
+  (with-slots (model) x
+    (do ((iter (gtk-tree-model-get-iter-first model)
+               (gtk-tree-model-iter-next model iter)))
+        ((not iter))
+      (when (eql value (first (gtk-tree-model-get model iter column)))
+        (return iter))))
+
+)
+
+(defmethod fill-model ((x tree-model-helper) (list list))
+  (with-slots (model column-accessors) x
+    (gtk-list-store-clear model)
+    (dolist (item list)
+      (apply #'gtk-list-store-set model (gtk-list-store-append model)
+             (mapcar (lambda (a) (funcall a item)) column-accessors)))))
+
+(defsetf selected-cell (obj &optional (column 0)) (value)
+  `(set-selected-cell ,obj ,value ,column))
+
 (defclass list-view (tree-model-helper)
   ((view :accessor view))
   (:documentation "TODO"))
@@ -71,17 +91,24 @@ property."
                   :column-labels (list ,@(filter* (lambda (n col) (awhen (third col) `(cons ,n ,it)))
                                                   (lrange columns) columns))))
 
-(defmethod fill-model ((x tree-model-helper) (list list))
-  (with-slots (model column-accessors) x
-    (gtk-list-store-clear model)
-    (dolist (item list)
-      (apply #'gtk-list-store-set model (gtk-list-store-append model)
-             (mapcar (lambda (a) (funcall a item)) column-accessors)))))
+
 
 (defmethod selected-cell ((list-view list-view) &optional (column 0))
   (with-slots (model view) list-view
     (awhen (gtk-tree-selection-get-selected (gtk-tree-view-get-selection view))
       (first (gtk-tree-model-get model it column)))))
+
+(defmethod set-selected-cell ((list-view list-view) value &optional column)
+  (when value
+    (with-slots (view) list-view
+      (awhen (find-cell-by-value list-view value column)
+        (gtk-tree-selection-select-iter (gtk-tree-view-get-selection view) it)
+        value))))
+
+(defmethod fill-model :around ((list-view list-view) (list list))
+  (let ((selection (selected-cell list-view)))
+    (call-next-method)
+    (setf (selected-cell list-view) selection)))
 
 (defclass combo-box (tree-model-helper)
   ((box :accessor box))
@@ -108,3 +135,17 @@ property."
   (with-slots (model box) combo-box
     (awhen (gtk-combo-box-get-active-iter box)
       (first (gtk-tree-model-get model it column)))))
+
+(defmethod set-selected-cell ((combo-box combo-box) value &optional (column 0))
+  (when value
+    (with-slots (box) combo-box
+      (awhen (find-cell-by-value combo-box value column)
+        (dbug "iter: ~A" it)
+        (gtk-combo-box-set-active-iter box it)
+        value))))
+
+(defmethod fill-model :around ((combo-box combo-box) (list list))
+  (let ((selection (selected-cell combo-box)))
+    (call-next-method)
+    (unless (setf (selected-cell combo-box) selection)
+      (gtk-combo-box-set-active (box combo-box) 0))))
