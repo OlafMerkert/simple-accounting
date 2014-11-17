@@ -142,7 +142,8 @@
                              "update" #'update
                              "delete" #'delete%)
        (horizontally date-entry
-                     (box account-entry)
+                     (aprog1 (make-instance 'gtk-alignment :yscale 0 :yalign 0.5)
+                       (gtk-container-add it (box account-entry)))
                      amount-entry)
        :expand
        (view payments-table)))))

@@ -70,9 +70,7 @@ property."
                (gtk-tree-model-iter-next model iter)))
         ((not iter))
       (when (eql value (first (gtk-tree-model-get model iter column)))
-        (return iter))))
-
-)
+        (return iter)))))
 
 (defmethod fill-model ((x tree-model-helper) (list list))
   (with-slots (model column-accessors) x
@@ -108,8 +106,6 @@ property."
                   :column-types (list ,@(mapcar #'second columns))
                   :column-labels (list ,@(filter* (lambda (n col) (awhen (third col) `(cons ,n ,it)))
                                                   (lrange columns) columns))))
-
-
 
 (defmethod selected-cell ((list-view list-view) &optional (column 0))
   (with-slots (model view) list-view
