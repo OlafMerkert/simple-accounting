@@ -63,16 +63,17 @@
               ;; also return function for updating models
               (ilambda+ (load-accounts-table))))))
 
+;; in the GTK Widget, months seem to go from 0-11
 (defun calendar->sql-date (calendar)
   (clsql-sys:make-date
    :year (gtk-calendar-year calendar)
-   :month (gtk-calendar-month calendar)
+   :month (+ 1 (gtk-calendar-month calendar))
    :day (gtk-calendar-day calendar)))
 
 (defun load-date-in-calendar (date calendar)
   (mvbind (day month year) (clsql-sys:decode-date date)
     (setf (gtk-calendar-year calendar) year
-          (gtk-calendar-month calendar) month
+          (gtk-calendar-month calendar) (- month 1)
           (gtk-calendar-day calendar) day)))
 
 (defun sql-date->string (date)
@@ -97,7 +98,9 @@
                                         ((lambda (p) (sql-date->string (sad:payment-date p)))
                                          "gchararray" "Date")
                                         ((lambda (p) (sad:account-name (sad:payment-account p))) "gchararray" "Account")
-                                        (sad:amount "gfloat" "Amount"))))
+                                        ((lambda (p) (substitute #\, #\.
+                                                            (format nil "~$ EUR"
+                                                                    (sad:amount p)))) "gchararray" "Amount"))))
     (labels ((load-account-entry ()
                (fill-model account-entry (sad:all-accounts)))
              (load-payments-table ()
@@ -113,13 +116,14 @@
                (let ((pmt (make-instance 'sad:payment :payment-account-id (selected-account-id)
                                          :payment-date (calendar->sql-date date-entry)
                                          :amount (gtk-spin-button-value amount-entry))))
-                 (format t "~A~%" pmt)
+                 (dbug "payment: ~A" pmt)
                  (clsql-sys:update-records-from-instance
                   pmt))
                (load-payments-table))
              (read% (&rest args)
                (declare (ignore args))
                (awhen (selected-payment)
+                 (dbug "amount: ~A, type: ~A" (sad:amount it) (type-of (sad:amount it)))
                  (load-date-in-calendar (sad:payment-date it) date-entry)
                  (setf (selected-cell account-entry) (sad:payment-account-id it)
                        (gtk-spin-button-value amount-entry) (sad:amount it))))

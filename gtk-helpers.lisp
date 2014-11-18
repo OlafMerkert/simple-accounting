@@ -154,7 +154,6 @@ property."
   (when value
     (with-slots (box) combo-box
       (awhen (find-cell-by-value combo-box value column)
-        (dbug "iter: ~A" it)
         (gtk-combo-box-set-active-iter box it)
         value))))
 

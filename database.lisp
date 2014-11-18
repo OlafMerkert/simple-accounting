@@ -48,7 +48,7 @@
                                           :set nil
                                           :retrieval :immediate))
    (amount :accessor amount
-           :type float
+           :type real
            :initarg :amount
            :nulls-ok nil)))
 
