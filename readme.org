@@ -18,6 +18,8 @@
 + [ ] per year
 + [ ] per account
 + [ ] bar chart for all accounts (comparison of expenses)
-** TODO select item after adding it
+** DONE select item after adding it
 ** DONE fix date conversion
 ** TODO add keyboard shortcuts
+** DONE make =list-view= scrollable
+** DONE clear =amount-entry= after adding payment, or updating it

@@ -25,12 +25,13 @@
                (declare (ignore args))
                (with-entries (abbrev-entry account-name-entry)
                  (when (length>0 account-name-entry)
-                   (clsql-sys:update-records-from-instance
-                    (make-instance 'sad:account :abbrev abbrev-entry
-                                   :account-name account-name-entry))
-                   (setf abbrev-entry ""
-                         account-name-entry "")
-                   (load-accounts-table))))
+                   (let ((act (make-instance 'sad:account :abbrev abbrev-entry
+                                             :account-name account-name-entry)))
+                     (clsql-sys:update-records-from-instance act)
+                     (setf abbrev-entry ""
+                           account-name-entry "")
+                     (load-accounts-table)
+                     (setf (selected-cell accounts-table) (sad:account-id act))))))
              (read% (&rest args)
                (declare (ignore args))
                (awhen  (selected-account)
@@ -59,7 +60,8 @@
                                      "delete" #'delete%)
                (horizontally abbrev-entry account-name-entry)
                :expand
-               (view accounts-table))
+               (aprog1 (make-instance 'gtk-scrolled-window)
+                 (gtk-scrolled-window-add-with-viewport it (view accounts-table))))
               ;; also return function for updating models
               (ilambda+ (load-accounts-table))))))
 
@@ -117,9 +119,10 @@
                                          :payment-date (calendar->sql-date date-entry)
                                          :amount (gtk-spin-button-value amount-entry))))
                  (dbug "payment: ~A" pmt)
-                 (clsql-sys:update-records-from-instance
-                  pmt))
-               (load-payments-table))
+                 (clsql-sys:update-records-from-instance pmt)
+                 (setf (gtk-spin-button-value amount-entry) 0)
+                 (load-payments-table)
+                 (setf (selected-cell payments-table) (sad:payment-id pmt))))
              (read% (&rest args)
                (declare (ignore args))
                (awhen (selected-payment)
@@ -133,6 +136,7 @@
                  (setf (sad:payment-account-id it) (selected-account-id)
                        (sad:payment-date it) (calendar->sql-date date-entry)
                        (sad:amount it) (gtk-spin-button-value amount-entry))
+                 (setf (gtk-spin-button-value amount-entry) 0)
                  (clsql-sys:update-records-from-instance it)
                  (load-payments-table)))
              (delete% (&rest args)
@@ -152,7 +156,8 @@
                              amount-entry
                              date-entry)
                :expand
-               (view payments-table))
+               (aprog1 (make-instance 'gtk-scrolled-window)
+                 (gtk-scrolled-window-add-with-viewport it (view payments-table))))
               ;; second return value: a function to be called for
               ;; updating the models
               (ilambda+ (load-account-entry) (load-payments-table))))))
