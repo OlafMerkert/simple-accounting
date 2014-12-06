@@ -2,6 +2,7 @@
   :depends-on (ol-utils
                clsql
                clsql-sqlite3
+               ol-sql-utils
                cl-cffi-gtk)
   :serial t
   :components ((:file "packages")

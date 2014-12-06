@@ -2,7 +2,8 @@
 
 (defpackage :simple-accounting-data
   (:nicknames :sad)
-  (:use :cl :ol :clsql)
+  (:use :cl :ol :clsql
+        :clsql-helpers)
   (:export
    #:connect-simple-accounting
    #:account
