@@ -62,6 +62,21 @@
 ;; (connect-simple-accounting)
 ;; (setup-simple-accounting)
 
+(defun database-pathname (database)
+  (pathname (first (slot-value database 'clsql-sys:connection-spec))))
+
+(defun pathname-with-date-stamp (pathname)
+  (make-pathname :defaults pathname :name (format nil "~A.~A"
+                                              (pathname-name pathname)
+                                              (ol-date-utils:print-date/reverse
+                                               (local-time:today)))))
+
+(defun make-db-snapshot (&optional (database *simple-accounting-db*))
+  (when database
+    (let* ((path (database-pathname database))
+           (new-path (pathname-with-date-stamp path)))
+      (uiop/stream:copy-file path new-path))))
+
 (defun all-accounts () (select 'account :order-by 'account-name :flatp t))
 
 (defun account-by-id (id)

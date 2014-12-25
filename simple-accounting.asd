@@ -3,7 +3,8 @@
                clsql
                clsql-sqlite3
                ol-sql-utils
-               cl-cffi-gtk)
+               cl-cffi-gtk
+               ol-data-utils)
   :serial t
   :components ((:file "packages")
                (:file "database")
