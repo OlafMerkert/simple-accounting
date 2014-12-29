@@ -162,6 +162,11 @@
               ;; updating the models
               (ilambda+ (load-account-entry) (load-payments-table))))))
 
+(defun tools ()
+  (values (vertically
+           (buttons-with-actions "Make database snapshot" #'sad:make-db-snapshot))
+          (ilambda+ ())))
+
 (defun simple-account-main ()
   (sb-int:with-float-traps-masked (:divide-by-zero)
     (within-main-loop
@@ -172,7 +177,8 @@
                                                 (leave-gtk-main)))
         (gtk-container-add window
                            (notebook ("Accounts" accounts-manager)
-                                     ("Payments" payments-recorder)))
+                                     ("Payments" payments-recorder)
+                                     ("Tools"    tools)))
         (gtk-widget-show-all window)))))
 
 (defun simple-account ()

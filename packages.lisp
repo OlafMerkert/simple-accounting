@@ -21,7 +21,8 @@
    #:account-by-id
    #:all-payments
    #:*simple-accounting-db*
-   #:payment-by-id))
+   #:payment-by-id
+   #:make-db-snapshot))
 
 (defpackage :simple-accounting-interface
   (:nicknames :sai)
