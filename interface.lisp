@@ -164,7 +164,7 @@
 
 (defun tools ()
   (values (vertically
-           (buttons-with-actions "Make database snapshot" #'sad:make-db-snapshot))
+           (buttons-with-actions "Make database snapshot" (swallow #'sad:make-db-snapshot)))
           (ilambda+ ())))
 
 (defun simple-account-main ()
