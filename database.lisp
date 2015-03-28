@@ -48,13 +48,13 @@
                                           :set nil
                                           :retrieval :immediate))
    (amount :accessor amount
-           :type real
+           :type float
            :initarg :amount
            :nulls-ok nil)))
 
 (create-standard-print-object payment (payment-id) payment-date amount payment-account)
 
-(define-sqlite3-database simple-accounting "/home/olaf/tmp/haushaltsbuch.sqlite"
+(define-sqlite3-database simple-accounting "/home/olaf/data/simple-accounting/haushaltsbuch.sqlite"
   :sequences '(account-id payment-id)
   :tables '((account account-name)
             (payment payment-date payment-account-id)))
