@@ -1,6 +1,6 @@
 (in-package :simple-accounting-data)
 
-(file-enable-sql-reader-syntax)
+(in-readtable clsql-readtable)
 
 ;;; for starters, we just need two simple classes: accounts and
 ;;; payments
