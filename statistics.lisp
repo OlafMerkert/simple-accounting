@@ -2,9 +2,6 @@
 
 (in-readtable clsql-readtable)
 
-(defun account-per-month (month)
-  (select [payment-account-id] [sum [amount]] :all t :from [payment]))
-
 (defun my-date-format (stamp)
   (format nil "~4,'0D-~2,'0D-~2,'0D"
           (local-time:timestamp-year stamp)
@@ -12,12 +9,17 @@
           (local-time:timestamp-day stamp)))
 
 (defmacro! with-month-filter ((month year) &body body)
-  `(let* ((,g!stamp (ol-date-utils:encode-date 1 ,month ,year))
-          (,g!next-stamp (local-time:timestamp+ ,g!stamp 1 :month))
+  `(let* ((,g!stamp (ol-date-utils:encode-date 1 (or month 1) ,year))
+          (,g!next-stamp (local-time:timestamp+ ,g!stamp 1 (if month :month :year)))
           (month-condition [and [<= (my-date-format ,g!stamp) [payment-date]]
                            [< [payment-date] (my-date-format ,g!next-stamp)]]))
      ,@body))
 
+(defun payments-per-month (month year)
+  (with-month-filter (month year)
+    (select 'payment :where month-condition :order-by 'payment-date :flatp t)))
+
+;; (payments-per-month nil 2015)
 
 (defun accounts-per-month (month year)
   (with-month-filter (month year)
@@ -45,6 +47,6 @@
 
 ;; (totals-per-month)
 
-;; (account-per-month 4 2015)
+;; (accounts-per-month 4 2015)
 
 ;; (total-per-month 4 2015)

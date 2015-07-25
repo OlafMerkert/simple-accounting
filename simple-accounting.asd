@@ -8,5 +8,6 @@
   :serial t
   :components ((:file "packages")
                (:file "database")
+               (:file "statistics")
                (:file "gtk-helpers")
                (:file "interface")))
