@@ -4,16 +4,17 @@
 (defpar *padding-horizontal* 3)
 (defpar *padding-vertical* 2)
 
-(defun push-if (pred list)
-  "Given a list like (:a :b c d :e f) produce the list of
+(ew
+ (defun push-if (pred list)
+   "Given a list like (:a :b c d :e f) produce the list of
   lists ((c :b :a) (d) (f :e)) if `pred' is `keywordp'."
-  (labels ((rec (list acc matches)
-             (if (null list)
-                 (if matches (cons matches acc) acc)
-                 (if (funcall pred (car list))
-                     (rec (cdr list) acc (cons (car list) matches))
-                     (rec (cdr list) (cons (cons (car list) matches) acc) nil)))))
-    (nreverse (rec list nil nil))))
+   (labels ((rec (list acc matches)
+              (if (null list)
+                  (if matches (cons matches acc) acc)
+                  (if (funcall pred (car list))
+                      (rec (cdr list) acc (cons (car list) matches))
+                      (rec (cdr list) (cons (cons (car list) matches) acc) nil)))))
+     (nreverse (rec list nil nil)))))
 
 (bind-multi ((macroname vertically horizontally)
              (direction :vertical :horizontal)
@@ -32,7 +33,7 @@
   (let ((button-box (make-instance 'gtk-box
                                    :orientation :horizontal
                                    :homegeneous t)))
-    (dolist (label+action (group labels+actions 2))
+    (dolist (label+action (partition labels+actions 2))
       (let ((button (make-instance 'gtk-button :label (first label+action))))
         (awhen (second label+action) (g-signal-connect button "clicked" it))
         (gtk-box-pack-start button-box button :expand nil :padding *padding-horizontal*)))
