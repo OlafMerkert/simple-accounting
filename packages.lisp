@@ -23,7 +23,11 @@
    #:*simple-accounting-db*
    #:payment-by-id
    #:make-db-snapshot
-   #:payments-per-month))
+   #:payments-per-month
+   #:accounts-total
+   #:accounts-per-month
+   #:total-total
+   #:total-per-month))
 
 (defpackage :simple-accounting-interface
   (:nicknames :sai)
