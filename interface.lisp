@@ -83,6 +83,9 @@
     (format nil "~4,'0D-~2,'0D-~2,'0D"
             year month day)))
 
+(defun euro-format (euro)
+  (substitute #\, #\. (format nil "~$ EUR" euro)))
+
 (defun payments-recorder ()
   (let ((date-entry (make-instance 'gtk-calendar))
         (account-entry (make-combo-box (sad:account-id "guint")
@@ -92,9 +95,7 @@
                                         ((lambda (p) (sql-date->string (sad:payment-date p)))
                                          "gchararray" "Date")
                                         ((lambda (p) (sad:account-name (sad:payment-account p))) "gchararray" "Account")
-                                        ((lambda (p) (substitute #\, #\.
-                                                            (format nil "~$ EUR"
-                                                                    (sad:amount p)))) "gchararray" "Amount")))
+                                        ((lambda (p) (euro-format (sad:amount p))) "gchararray" "Amount")))
         (date-selector (make-instance 'month-year-input)))
     (update-disabled-state date-selector)
     (labels ((load-account-entry ()
@@ -160,6 +161,34 @@
               ;; updating the models
               (ilambda+ (load-account-entry) (load-payments-table))))))
 
+;;; expenses per account
+(defun accounts-expenses ()
+  (let ((expenses-table (make-list-view ((lambda (p) (sad:account-name (first p))) "gchararray" "Account")
+                                        ((lambda (p) (euro-format (second p))) "gchararray" "Amount")))
+        (total-expenses (make-instance 'gtk-label :single-line-mode t))
+        (date-selector (make-instance 'month-year-input)))
+    (update-disabled-state date-selector)
+    (labels ((load-expenses ()
+               (fill-model expenses-table 
+                           (if (selector-active-p date-selector)
+                               (sad:accounts-per-month (month date-selector) (year date-selector))
+                               (sad:accounts-total)))
+               (setf (gtk-label-label total-expenses)
+                     (format nil "Total sum of expenses displayed below: ~A"
+                             (euro-format
+                              (if (selector-active-p date-selector)
+                                  (sad:total-per-month (month date-selector) (year date-selector))
+                                  (sad:total-total)))))))
+      (load-expenses)
+      (advise-change-action date-selector #'load-expenses)
+      (values (vertically
+               total-expenses
+               :expand
+               (aprog1 (make-instance 'gtk-scrolled-window)
+                 (gtk-scrolled-window-add-with-viewport it (view expenses-table)))
+               (widget date-selector))
+              #'load-expenses))))
+
 (defun tools ()
   (values (vertically
            (buttons-with-actions "Make database snapshot" (swallow #'sad:make-db-snapshot)))
@@ -176,6 +205,7 @@
         (gtk-container-add window
                            (notebook ("Accounts" accounts-manager)
                                      ("Payments" payments-recorder)
+                                     ("Expenses by Accounts" accounts-expenses)
                                      ("Tools"    tools)))
         (gtk-widget-show-all window)))))
 
