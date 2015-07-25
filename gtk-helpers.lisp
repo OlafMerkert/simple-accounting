@@ -164,6 +164,11 @@ property."
     (unless (setf (selected-cell combo-box) selection)
       (gtk-combo-box-set-active (box combo-box) 0))))
 
+(defun scrolled-table (table)
+  (aprog1 (make-instance 'gtk-scrolled-window)
+    (gtk-scrolled-window-add-with-viewport it (view table))))
+
+
 ;;; multipage apps with notebooks
 (defmacro! notebook (&rest components)
   "Every component should have the shape (label . call) where `call'
@@ -258,4 +263,3 @@ widget. "
   ;; same for the spinners
   (g-signal-connect (gtk-spin-button-adjustment (month-widget month-year-input)) "value-changed" (swallow function))
   (g-signal-connect (gtk-spin-button-adjustment (year-widget month-year-input)) "value-changed" (swallow function)))
-

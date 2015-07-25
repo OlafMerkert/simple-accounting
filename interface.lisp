@@ -60,8 +60,7 @@
                                      "delete" #'delete%)
                (horizontally abbrev-entry account-name-entry)
                :expand
-               (aprog1 (make-instance 'gtk-scrolled-window)
-                 (gtk-scrolled-window-add-with-viewport it (view accounts-table))))
+               (scrolled-table accounts-table))
               ;; also return function for updating models
               (ilambda+ (load-accounts-table))))))
 
@@ -154,8 +153,7 @@
                              amount-entry
                              date-entry)
                :expand
-               (aprog1 (make-instance 'gtk-scrolled-window)
-                 (gtk-scrolled-window-add-with-viewport it (view payments-table)))
+               (scrolled-table payments-table)
                (widget date-selector))
               ;; second return value: a function to be called for
               ;; updating the models
@@ -184,8 +182,7 @@
       (values (vertically
                total-expenses
                :expand
-               (aprog1 (make-instance 'gtk-scrolled-window)
-                 (gtk-scrolled-window-add-with-viewport it (view expenses-table)))
+               (scrolled-table expenses-table)
                (widget date-selector))
               #'load-expenses))))
 
