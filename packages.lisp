@@ -27,7 +27,8 @@
    #:accounts-total
    #:accounts-per-month
    #:total-total
-   #:total-per-month))
+   #:total-per-month
+   #:totals-per-month))
 
 (defpackage :simple-accounting-interface
   (:nicknames :sai)

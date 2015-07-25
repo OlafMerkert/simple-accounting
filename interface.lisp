@@ -186,6 +186,14 @@
                (widget date-selector))
               #'load-expenses))))
 
+(defun monthly-expenses ()
+  (let ((expenses-table (make-list-view ((lambda (p) (ol-date-utils:print-month (first p) nil)) "gchararray" "Month")
+                                        ((lambda (p) (euro-format (second p))) "gchararray" "Amount"))))
+    (labels ((load-expenses ()
+               (fill-model expenses-table (sad:totals-per-month))))
+      (values (scrolled-table expenses-table)
+              #'load-expenses))))
+
 (defun tools ()
   (values (vertically
            (buttons-with-actions "Make database snapshot" (swallow #'sad:make-db-snapshot)))
@@ -203,6 +211,7 @@
                            (notebook ("Accounts" accounts-manager)
                                      ("Payments" payments-recorder)
                                      ("Expenses by Accounts" accounts-expenses)
+                                     ("Expenses by Months" monthly-expenses)
                                      ("Tools"    tools)))
         (gtk-widget-show-all window)))))
 
