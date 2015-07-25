@@ -87,15 +87,7 @@
   (let ((date-entry (make-instance 'gtk-calendar))
         (account-entry (make-combo-box (sad:account-id "guint")
                                        (sad:account-name "gchararray" t)))
-        (amount-entry (make-instance 'gtk-spin-button
-                                     :adjustment (make-instance 'gtk-adjustment :value 0
-                                                                :lower 0
-                                                                :upper 10000
-                                                                :step-increment 1
-                                                                :page-increment 10)
-                                     :digits 2
-                                     :numeric t
-                                     :xalign 1))
+        (amount-entry (make-spinner :min 0 :max 10000 :default 0 :digits 2))
         (payments-table (make-list-view (sad:payment-id "guint")
                                         ((lambda (p) (sql-date->string (sad:payment-date p)))
                                          "gchararray" "Date")
@@ -104,6 +96,7 @@
                                                             (format nil "~$ EUR"
                                                                     (sad:amount p)))) "gchararray" "Amount")))
         (date-selector (make-instance 'month-year-input)))
+    (update-disabled-state date-selector)
     (labels ((load-account-entry ()
                (fill-model account-entry (sad:all-accounts)))
              (load-payments-table ()
@@ -149,6 +142,7 @@
                  (load-payments-table))))
       (load-account-entry)
       (load-payments-table)
+      (advise-change-action date-selector #'load-payments-table)
       (values (vertically
                (buttons-with-actions "add" #'add
                                      "read" #'read%

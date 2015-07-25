@@ -187,11 +187,18 @@ widget. "
 (defun current-year ()
   (local-time:timestamp-year (local-time:today)))
 
-(defun make-spinner (&key min max (default 0))
-  )
+(defun make-spinner (&key (min most-negative-fixnum) (max most-positive-fixnum) (default 0) (digits 0))
+  (make-instance 'gtk-spin-button
+                 :adjustment (make-instance 'gtk-adjustment :value default
+                                            :lower min
+                                            :upper max 
+                                            :step-increment 1
+                                            :page-increment 10)
+                 :digits digits
+                 :numeric t
+                 :xalign 1))
 
-
-(defclass date-selector ()
+(defclass month-year-input ()
   ((month-widget :initform (make-spinner :min 1 :max 12 :default (current-month))
                  :reader month-widget)
    (year-widget :initarg :year-widget
@@ -200,50 +207,54 @@ widget. "
    (mode-widgets :reader mode-widgets))
   (:documentation "TODO"))
 
-(defmethod initialize-instance :after ((date-selector date-selector) &key)
+(defmethod initialize-instance :after ((month-year-input month-year-input) &key)
   ;; select between no filtering, per year or per month
   (let* ((all (make-instance 'gtk-radio-button :label "All"))
          (year (make-instance 'gtk-radio-button :group all :label "Year" ))
          (month (make-instance 'gtk-radio-button :group all :label "Month")))
-    (setf (slot-value date-selector 'mode-widgets) (list all year month))))
+    (setf (slot-value month-year-input 'mode-widgets) (list all year month))))
 
+(defmethod selector-active-p ((month-year-input month-year-input))
+  (not (eq :all (current-mode month-year-input))))
 
-(defmethod selector-active-p ((date-selector date-selector))
-  (not (eq :all (current-mode date-selector))))
+(defmethod month ((month-year-input month-year-input))
+  (when (eq :month (current-mode month-year-input))
+    ;; need to make sure we return an integer
+    (floor (gtk-spin-button-value (month-widget month-year-input)))))
 
-(defmethod month ((date-selector date-selector)))
-(defmethod year ((date-selector date-selector)))
+(defmethod year ((month-year-input month-year-input))
+  (floor (gtk-spin-button-value (year-widget month-year-input))))
 
-
-(defmethod widget ((date-selector date-selector))
-  (with-slots (mode-widgets month-widget year-widget) date-selector
+(defmethod widget ((month-year-input month-year-input))
+  (with-slots (mode-widgets month-widget year-widget) month-year-input
     (horizontally
      (elt mode-widgets 0) (elt mode-widgets 1) (elt mode-widgets 2)
      month-widget year-widget)))
 
-(defmethod current-mode ((date-selector date-selector))
-  (with-slots (mode-widgets) date-selector
+(defmethod current-mode ((month-year-input month-year-input))
+  (with-slots (mode-widgets) month-year-input
     (cond ((gtk-toggle-button-active (elt mode-widgets 0)) :all)
           ((gtk-toggle-button-active (elt mode-widgets 1)) :year)
           ((gtk-toggle-button-active (elt mode-widgets 2)) :month)
           (t :all))))
 
-(defmethod update-disabled-state ((date-selector date-selector))
-  (ecase (current-mode date-selector)
-    (:all (setf (gtk-widget-sensitive (month-widget date-selector)) nil
-                (gtk-widget-sensitive (year-widget date-selector)) nil))
-    (:year (setf (gtk-widget-sensitive (month-widget date-selector)) nil
-                 (gtk-widget-sensitive (year-widget date-selector)) t))
-    (:month (setf (gtk-widget-sensitive (month-widget date-selector)) t
-                (gtk-widget-sensitive (year-widget date-selector)) t))))
+(defmethod update-disabled-state ((month-year-input month-year-input))
+  (ecase (current-mode month-year-input)
+    (:all (setf (gtk-widget-sensitive (month-widget month-year-input)) nil
+                (gtk-widget-sensitive (year-widget month-year-input)) nil))
+    (:year (setf (gtk-widget-sensitive (month-widget month-year-input)) nil
+                 (gtk-widget-sensitive (year-widget month-year-input)) t))
+    (:month (setf (gtk-widget-sensitive (month-widget month-year-input)) t
+                (gtk-widget-sensitive (year-widget month-year-input)) t))))
 
-(defmethod advise-change-action ((date-selector date-selector) function)
+(defmethod advise-change-action ((month-year-input month-year-input) function)
   ;; call the `function' every time we get a state change on the
   ;; selector
-  (with-slots (mode-widgets) date-selector
+  (with-slots (mode-widgets) month-year-input
     (dolist (w mode-widgets)
-      (g-signal-connect w  "toggled" (ilambda+ (update-disabled-state date-selector)
+      (g-signal-connect w  "toggled" (ilambda+ (update-disabled-state month-year-input)
                                           (funcall function)))))
-  ;; TODO same for the spinners
-  )
+  ;; same for the spinners
+  (g-signal-connect (gtk-spin-button-adjustment (month-widget month-year-input)) "value-changed" (swallow function))
+  (g-signal-connect (gtk-spin-button-adjustment (year-widget month-year-input)) "value-changed" (swallow function)))
 
