@@ -179,3 +179,71 @@ widget. "
      (g-signal-connect ,g!notebook "switch-page" (ilambda (,g!notebook ,g!page ,g!page-nr &rest ,g!data)
                                                    (funcall (aref ,g!updaters ,g!page-nr))))
      ,g!notebook))
+
+;;; filtering tables by a given month and year
+(defun current-month ()
+  (local-time:timestamp-month (local-time:today)))
+
+(defun current-year ()
+  (local-time:timestamp-year (local-time:today)))
+
+(defun make-spinner (&key min max (default 0))
+  )
+
+
+(defclass date-selector ()
+  ((month-widget :initform (make-spinner :min 1 :max 12 :default (current-month))
+                 :reader month-widget)
+   (year-widget :initarg :year-widget
+                :initform (make-spinner :min 1900 :default (current-year))
+                :reader year-widget)
+   (mode-widgets :reader mode-widgets))
+  (:documentation "TODO"))
+
+(defmethod initialize-instance :after ((date-selector date-selector) &key)
+  ;; select between no filtering, per year or per month
+  (let* ((all (make-instance 'gtk-radio-button :label "All"))
+         (year (make-instance 'gtk-radio-button :group all :label "Year" ))
+         (month (make-instance 'gtk-radio-button :group all :label "Month")))
+    (setf (slot-value date-selector 'mode-widgets) (list all year month))))
+
+
+(defmethod selector-active-p ((date-selector date-selector))
+  (not (eq :all (current-mode date-selector))))
+
+(defmethod month ((date-selector date-selector)))
+(defmethod year ((date-selector date-selector)))
+
+
+(defmethod widget ((date-selector date-selector))
+  (with-slots (mode-widgets month-widget year-widget) date-selector
+    (horizontally
+     (elt mode-widgets 0) (elt mode-widgets 1) (elt mode-widgets 2)
+     month-widget year-widget)))
+
+(defmethod current-mode ((date-selector date-selector))
+  (with-slots (mode-widgets) date-selector
+    (cond ((gtk-toggle-button-active (elt mode-widgets 0)) :all)
+          ((gtk-toggle-button-active (elt mode-widgets 1)) :year)
+          ((gtk-toggle-button-active (elt mode-widgets 2)) :month)
+          (t :all))))
+
+(defmethod update-disabled-state ((date-selector date-selector))
+  (ecase (current-mode date-selector)
+    (:all (setf (gtk-widget-sensitive (month-widget date-selector)) nil
+                (gtk-widget-sensitive (year-widget date-selector)) nil))
+    (:year (setf (gtk-widget-sensitive (month-widget date-selector)) nil
+                 (gtk-widget-sensitive (year-widget date-selector)) t))
+    (:month (setf (gtk-widget-sensitive (month-widget date-selector)) t
+                (gtk-widget-sensitive (year-widget date-selector)) t))))
+
+(defmethod advise-change-action ((date-selector date-selector) function)
+  ;; call the `function' every time we get a state change on the
+  ;; selector
+  (with-slots (mode-widgets) date-selector
+    (dolist (w mode-widgets)
+      (g-signal-connect w  "toggled" (ilambda+ (update-disabled-state date-selector)
+                                          (funcall function)))))
+  ;; TODO same for the spinners
+  )
+

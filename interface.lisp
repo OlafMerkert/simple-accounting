@@ -102,11 +102,14 @@
                                         ((lambda (p) (sad:account-name (sad:payment-account p))) "gchararray" "Account")
                                         ((lambda (p) (substitute #\, #\.
                                                             (format nil "~$ EUR"
-                                                                    (sad:amount p)))) "gchararray" "Amount"))))
+                                                                    (sad:amount p)))) "gchararray" "Amount")))
+        (date-selector (make-instance 'month-year-input)))
     (labels ((load-account-entry ()
                (fill-model account-entry (sad:all-accounts)))
              (load-payments-table ()
-               (fill-model payments-table (sad:all-payments)))
+               (fill-model payments-table (if (selector-active-p date-selector)
+                                              (sad:payments-per-month (month date-selector) (year date-selector))
+                                              (sad:all-payments))))
              (selected-account-id ()
                (selected-cell account-entry))
              #|(selected-account ()
@@ -157,7 +160,8 @@
                              date-entry)
                :expand
                (aprog1 (make-instance 'gtk-scrolled-window)
-                 (gtk-scrolled-window-add-with-viewport it (view payments-table))))
+                 (gtk-scrolled-window-add-with-viewport it (view payments-table)))
+               (widget date-selector))
               ;; second return value: a function to be called for
               ;; updating the models
               (ilambda+ (load-account-entry) (load-payments-table))))))
