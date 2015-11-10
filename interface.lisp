@@ -1,7 +1,7 @@
 (in-package :simple-accounting-interface)
 
 (defmacro setf3 (&rest args)
-  "Transform (setf3 a1 a2 a3 b1 b2 b3) into (setf3 a1 a2 a2 a3 b1 b2 b2 b3)."
+  "Transform (setf3 a1 a2 a3 b1 b2 b3) into (setf a1 a2 a2 a3 b1 b2 b2 b3)."
   (labels ((rec (list)
              (case (length list)
                (0 nil)
