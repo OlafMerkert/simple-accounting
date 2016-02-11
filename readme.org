@@ -24,3 +24,4 @@
 ** DONE make =list-view= scrollable
 ** DONE clear =amount-entry= after adding payment, or updating it
 ** TODO currency conversion tool
+** TODO List accounts by frequency used
